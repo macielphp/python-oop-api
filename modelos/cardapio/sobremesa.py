@@ -8,7 +8,7 @@ class Sobremesa(ItemCardapio):
         self.descricao = descricao  
 
     def __str__(self):
-        return f"Tipo: {self._tipo} | Tamanho: {self._tamanho} | descricao: {self._descricao}"
+        return f"Tipo: {self.tipo} | Tamanho: {self.tamanho} | descricao: {self.descricao}"
 
     def aplicar_desconto(self):
         self._preco -= (self._preco * 0.15)
