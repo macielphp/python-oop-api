@@ -21,6 +21,5 @@ restaurante_praca.adicionar_no_cardapio(sobremesa_morango)
 def main():
     restaurante_praca.exibir_cardapio()
 
-
 if __name__ == '__main__':
     main()
