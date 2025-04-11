@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from main import restaurante_praca 
+from db import buscar_cardapio
 
 ctk.set_appearance_mode('light') # 'Dark', "Light", "System";
 ctk.set_default_color_theme('blue') # Pode usar: "blue", "green", "dark-blue";
@@ -46,7 +46,54 @@ class App(ctk.CTk):
         self._atualizar_conteudo("Página de restaurantes")
 
     def mostrar_cadastro(self):
-        self._atualizar_conteudo("Formulário de cadastro de item")
+
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+
+        ctk.CTkLabel(self.main_frame, text="Cadastrar Novo Item", font=("Arial", 20)).pack(pady=20)
+
+        nome_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Nome do item")
+        nome_entry.pack(pady=5)
+        
+        preco_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Preço(ex: 9.99)")
+        preco_entry.pack(pady=5)
+
+        tamanho_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Tamanho (opcional)")
+        tamanho_entry.pack(pady=5)
+
+        descricao_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Descrição(opcional)")
+        descricao_entry.pack(pady=5)
+
+        resultado_label = ctk.CTkLabel(self.main_frame, text="")
+        resultado_label.pack(pady=5)
+
+        def cadastrar():
+            nome = nome_entry.get()
+            preco = preco_entry.get()
+            tamanho = tamanho_entry.get()
+            descricao = descricao_entry.get()
+
+            if not nome or not preco:
+                resultado_label.configure(text="Nome e preço são obrigatórios!", text_color="red")
+                return
+
+            try:
+                preco = float(preco)
+            except ValueError:  
+                resultado_label.configure(text="Preço inválido!", text_color="red")
+                return
+            from db import inserir_item
+            inserir_item(nome, preco, tamanho if tamanho else None, descricao if descricao else None)
+
+            resultado_label.configure(text="Item cadastrado com sucesso!", text_color="green")
+
+            # Limpar os campos
+            nome_entry.delete(0, "end")
+            preco_entry.delete(0, "end")
+            tamanho_entry.delete(0, "end")
+            descricao_entry.delete(0, "end")
+
+        ctk.CTkButton(self.main_frame, text="Cadastrar", command=cadastrar).pack(pady=10)
 
     def mostrar_avaliacoes(self):
         self._atualizar_conteudo("Página de avaliações")
@@ -57,16 +104,15 @@ class App(ctk.CTk):
         ctk.CTkLabel(self.main_frame, text=texto, font=("Arial", 20)).pack(pady=50)
 
     def _atualizar_conteudo_cardapio(self):
+        from db import buscar_cardapio
+
         for widget in self.main_frame.winfo_children():
             widget.destroy()
+
         ctk.CTkLabel(self.main_frame, text="Cardápio do Restaurante Praça", font=("Arial", 22)).pack(pady=20)
         
         # Simulação de cardápio
-        cardapio = [
-            {"nome": "Suco de Melancia", "preco": 4.75, "tamanho": "grande"},
-            {"nome": "Pãozinho", "preco": 1.84, "descricao": "O melhor pão da cidade"},
-            {"nome": "Pet Gatou", "preco": 25.415, "descricao": "Chocolate belga Amarelo"}
-        ]
+        cardapio = buscar_cardapio()
 
         for item in cardapio:
             frame_item = ctk.CTkFrame(self.main_frame)
