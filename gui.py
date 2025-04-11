@@ -18,19 +18,19 @@ class App(ctk.CTk):
         self.nav_frame.grid(row=0, column=0, sticky="ns")
         self.nav_frame.grid_propagate(False)
 
-        ctk.CTkLabel(self.nav_frame, text="Menu", font=("Arial", 20)).pack(pady=20)
+        ctk.CTkLabel(self.nav_frame, text="Menu", font=("Arial", 20)).pack(pady=10)
 
         self.btn_inicio = ctk.CTkButton(self.nav_frame, text="Início", command=self.mostrar_inicio)
-        self.btn_inicio.pack(pady=10)
+        self.btn_inicio.pack(pady=5)
 
         self.btn_restaurantes = ctk.CTkButton(self.nav_frame, text="Restaurantes", command=self.mostrar_restaurantes)
-        self.btn_restaurantes.pack(pady=10)
+        self.btn_restaurantes.pack(pady=5)
 
         self.btn_cadastrar = ctk.CTkButton(self.nav_frame, text="Cadastrar", command=self.mostrar_cadastro)
-        self.btn_cadastrar.pack(pady=10)
+        self.btn_cadastrar.pack(pady=5)
 
         self.btn_avaliacoes = ctk.CTkButton(self.nav_frame, text="Avaliações", command=self.mostrar_avaliacoes)
-        self.btn_avaliacoes.pack(pady=10)
+        self.btn_avaliacoes.pack(pady=5)
 
         # ==========Área de conteúdo==================
         self.main_frame = ctk.CTkFrame(self)
@@ -40,7 +40,7 @@ class App(ctk.CTk):
         self.label_conteudo.pack(pady=50)
 
     def mostrar_inicio(self):
-        self._atualizar_conteudo("Página inicial - exibir cardápio")
+        self._atualizar_conteudo_cardapio()
 
     def mostrar_restaurantes(self):
         self._atualizar_conteudo("Página de restaurantes")
@@ -55,6 +55,33 @@ class App(ctk.CTk):
         for widget in self.main_frame.winfo_children():
             widget.destroy()
         ctk.CTkLabel(self.main_frame, text=texto, font=("Arial", 20)).pack(pady=50)
+
+    def _atualizar_conteudo_cardapio(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        ctk.CTkLabel(self.main_frame, text="Cardápio do Restaurante Praça", font=("Arial", 22)).pack(pady=20)
+        
+        # Simulação de cardápio
+        cardapio = [
+            {"nome": "Suco de Melancia", "preco": 4.75, "tamanho": "grande"},
+            {"nome": "Pãozinho", "preco": 1.84, "descricao": "O melhor pão da cidade"},
+            {"nome": "Pet Gatou", "preco": 25.415, "descricao": "Chocolate belga Amarelo"}
+        ]
+
+        for item in cardapio:
+            frame_item = ctk.CTkFrame(self.main_frame)
+            frame_item.pack(pady=10, fill="x", padx=40)
+
+            nome = item["nome"]
+            preco = f"R${item["preco"]:.2f}"
+
+            texto = f"{nome} | Preço: {preco}"
+            if "tamanho" in item:
+                texto += f" | Tamanho: {item['tamanho']}"
+            if "descricao" in item:
+                texto += f" | Descrição: {item['descricao']}"
+            
+            ctk.CTkLabel(frame_item, text=texto, anchor="w").pack(padx="10", pady="5")
 
 if __name__ == "__main__":
     app = App()
