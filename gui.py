@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from db import buscar_cardapio
+
 
 ctk.set_appearance_mode('light') # 'Dark', "Light", "System";
 ctk.set_default_color_theme('blue') # Pode usar: "blue", "green", "dark-blue";
@@ -57,6 +57,10 @@ class App(ctk.CTk):
         
         preco_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Preço(ex: 9.99)")
         preco_entry.pack(pady=5)
+        
+        categoria_menu = ctk.CTkOptionMenu(self.main_frame, values=["bebidas", "prato", "sobremesa"])
+        categoria_menu.set("bebida") #Valor padrão
+        categoria_menu.pack(pady=5)
 
         tamanho_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Tamanho (opcional)")
         tamanho_entry.pack(pady=5)
@@ -70,11 +74,12 @@ class App(ctk.CTk):
         def cadastrar():
             nome = nome_entry.get()
             preco = preco_entry.get()
+            categoria = categoria_menu.get()
             tamanho = tamanho_entry.get()
             descricao = descricao_entry.get()
 
-            if not nome or not preco:
-                resultado_label.configure(text="Nome e preço são obrigatórios!", text_color="red")
+            if not nome or not preco or not categoria:
+                resultado_label.configure(text="Nome, preço e categorias são obrigatórios!", text_color="red")
                 return
 
             try:
@@ -83,13 +88,14 @@ class App(ctk.CTk):
                 resultado_label.configure(text="Preço inválido!", text_color="red")
                 return
             from db import inserir_item
-            inserir_item(nome, preco, tamanho if tamanho else None, descricao if descricao else None)
+            inserir_item(nome, preco, categoria,tamanho if tamanho else None, descricao if descricao else None)
 
             resultado_label.configure(text="Item cadastrado com sucesso!", text_color="green")
 
             # Limpar os campos
             nome_entry.delete(0, "end")
             preco_entry.delete(0, "end")
+            categoria_menu.set("bebida")
             tamanho_entry.delete(0, "end")
             descricao_entry.delete(0, "end")
 
@@ -120,14 +126,24 @@ class App(ctk.CTk):
 
             nome = item["nome"]
             preco = f"R${item["preco"]:.2f}"
+            categoria = item.get("categoria", "não informado")
 
-            texto = f"{nome} | Preço: {preco}"
+            texto = f"{nome} | Preço: {preco} | Categoria: {categoria}"
             if "tamanho" in item:
                 texto += f" | Tamanho: {item['tamanho']}"
             if "descricao" in item:
                 texto += f" | Descrição: {item['descricao']}"
-            
-            ctk.CTkLabel(frame_item, text=texto, anchor="w").pack(padx="10", pady="5")
+
+            label = ctk.CTkLabel(frame_item, text=texto, anchor="w")
+            label.pack(side="left", padx=10, pady=5, fill="x", expand=True)
+
+            def deletar(nome_item=nome):
+                from db import deletar_item
+                deletar_item(nome_item)
+                self._atualizar_conteudo_cardapio()
+
+            btn_del = ctk.CTkButton(frame_item, text="Excluir", width=80, command=deletar)
+            btn_del.pack(side="right", padx=10)
 
 if __name__ == "__main__":
     app = App()
