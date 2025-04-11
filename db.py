@@ -33,18 +33,19 @@ def inserir_item(nome, preco, categoria, tamanho=None, descricao=None):
 def buscar_cardapio():
     conexao = sqlite3.connect('cardapio.db')
     cursor = conexao.cursor()
-    cursor.execute('SELECT nome, preco, categoria, tamanho, descricao FROM itens_cardapio')
+    cursor.execute('SELECT id, nome, preco, categoria, tamanho, descricao FROM itens_cardapio')
     dados = cursor.fetchall()
     conexao.close()
 
     cardapio = []
     for item in dados:
         cardapio.append({
-            "nome": item[0],
-            "preco": item[1],
-            "categoria": item[2],
-            "tamanho": item[3],
-            "descricao": item[4]
+            "id": item[0],
+            "nome": item[1],
+            "preco": item[2],
+            "categoria": item[3],
+            "tamanho": item[4],
+            "descricao": item[5]
         })
 
     return cardapio
@@ -56,3 +57,25 @@ def deletar_item(nome):
     conexao.commit()
     conexao.close()
 
+def atualizar_item(id_item, nome, preco, categoria, tamanho, descricao):
+    conexao = sqlite3.connect('cardapio.db')
+    cursor = conexao.cursor()
+    cursor.execute('''
+        UPDATE itens_cardapio
+        SET nome = ?, preco = ?, categoria = ?, tamanho = ?, descricao= ?
+        WHERE id = ?
+    ''',(nome, preco, categoria, tamanho, descricao, id_item))
+
+    conexao.commit()
+    conexao.close()
+
+def editar_item(id_item, nome, preco, categoria, tamanho=None, descricao=None):
+    conexao = sqlite3.connect("cardapio.db")
+    cursor = conexao.cursor()
+    cursor.execute('''
+        UPDATE itens_cardapio
+        SET nome = ?, preco = ?, categoria = ?, tamanho = ?, descricao = ?
+        WHERE id = ?
+    ''', (nome, preco, categoria, tamanho, descricao, id_item))
+    conexao.commit()
+    conexao.close()

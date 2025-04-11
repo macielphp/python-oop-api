@@ -145,6 +145,62 @@ class App(ctk.CTk):
             btn_del = ctk.CTkButton(frame_item, text="Excluir", width=80, command=deletar)
             btn_del.pack(side="right", padx=10)
 
+            def editar(item=item):
+                self._mostrar_edicao(item)
+
+            btn_editar = ctk.CTkButton(frame_item, text="Editar", width=80, command=editar)
+            btn_editar.pack(side="right", padx=10)
+
+    def _mostrar_edicao(self, item):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
+        ctk.CTkLabel(self.main_frame, text=f"Editando: {item['nome']}", font=("Arial", 20)).pack(pady=20)
+
+        nome_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Nome")
+        nome_entry.insert(0, item['nome'])
+        nome_entry.pack(pady=5)
+
+        preco_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Preço")
+        preco_entry.insert(0, str(item['preco']))
+        preco_entry.pack(pady=5)
+
+        categoria_menu = ctk.CTkOptionMenu(self.main_frame, values=['bebidas', 'prato', 'sobremesa'])
+        categoria_menu.set(item['categoria'])
+        categoria_menu.pack(pady=5)
+
+        tamanho_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Tamanho")
+        if item['tamanho']:
+            tamanho_entry.insert(0, item['tamanho'])
+        tamanho_entry.pack(pady=5)
+
+        descricao_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Descrição")
+        if item['descricao']:
+            descricao_entry.insert(0, item['descricao'])
+        descricao_entry.pack(pady=5)
+
+        resultado_label = ctk.CTkLabel(self.main_frame, text="")
+        resultado_label.pack(pady=5)
+
+        def salvar_edicao():
+            from db import editar_item
+            try:
+                preco = float(preco_entry.get())
+            except ValueError:
+                resultado_label.configure(text="Preço inválido!", text_color="red")
+                return
+
+            editar_item(
+                item['id'],
+                nome_entry.get(),
+                preco,
+                categoria_menu.get(),
+                tamanho_entry.get(),
+                descricao_entry.get()
+            )
+            resultado_label.configure(text="Item atualizado com sucesso!", text_color="green")
+            self._atualizar_conteudo_cardapio()
+        ctk.CTkButton(self.main_frame, text="Salvar", command=salvar_edicao).pack(pady=10)
+
 if __name__ == "__main__":
     app = App()
     app.mainloop()
