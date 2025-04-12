@@ -1,5 +1,15 @@
 import customtkinter as ctk
 
+from database.db import (
+    buscar_restaurantes_ativos,
+    inserir_item,
+    buscar_cardapio_por_restaurante,
+    deletar_item,
+    editar_item,
+    inserir_restaurante
+)
+
+from views.cadastro_restaurante import mostrar_cadastro_restaurante
 
 ctk.set_appearance_mode('light') # 'Dark', "Light", "System";
 ctk.set_default_color_theme('blue') # Pode usar: "blue", "green", "dark-blue";
@@ -20,14 +30,14 @@ class App(ctk.CTk):
 
         ctk.CTkLabel(self.nav_frame, text="Menu", font=("Arial", 20)).pack(pady=10)
 
-        self.btn_inicio = ctk.CTkButton(self.nav_frame, text="Início", command=self.mostrar_inicio)
+        self.btn_inicio = ctk.CTkButton(self.nav_frame, text="Ver cardápio", command=self.mostrar_inicio)
         self.btn_inicio.pack(pady=5)
 
-        self.btn_restaurantes = ctk.CTkButton(self.nav_frame, text="Restaurantes", command=self.mostrar_restaurantes)
-        self.btn_restaurantes.pack(pady=5)
+        self.btn_cadastrar_restaurante = ctk.CTkButton(self.nav_frame, text="Cadastrar Restaurante", command=lambda: mostrar_cadastro_restaurante(self))
+        self.btn_cadastrar_restaurante.pack(pady=5)
 
-        self.btn_cadastrar = ctk.CTkButton(self.nav_frame, text="Cadastrar", command=self.mostrar_cadastro)
-        self.btn_cadastrar.pack(pady=5)
+        self.btn_cadastrar_cardapio = ctk.CTkButton(self.nav_frame, text="Cadastrar Cardápio", command=self.mostrar_cadastro_cardapio)
+        self.btn_cadastrar_cardapio.pack(pady=5)
 
         self.btn_avaliacoes = ctk.CTkButton(self.nav_frame, text="Avaliações", command=self.mostrar_avaliacoes)
         self.btn_avaliacoes.pack(pady=5)
@@ -42,13 +52,22 @@ class App(ctk.CTk):
     def mostrar_inicio(self):
         self._atualizar_conteudo_cardapio()
 
-    def mostrar_restaurantes(self):
-        self._atualizar_conteudo("Página de restaurantes")
+    
 
-    def mostrar_cadastro(self):
+    def mostrar_cadastro_cardapio(self):
+        self.limpar_conteudo()
+        
+        restaurantes = buscar_restaurantes_ativos()
 
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        if not restaurantes:
+            ctk.CTkLabel(self.main_frame, text="Nenhum restaurante ativo. Cadastre um primeiro.", text_color="red").pack(pady=20)
+            return
+
+        restaurante_nomes = [f"{id} - {nome}" for id, nome in restaurantes]
+        restaurante_menu = ctk.CTkOptionMenu(self.main_frame, values=restaurante_nomes)
+        restaurante_menu.set(restaurante_nomes[0])
+        restaurante_menu.pack(pady=5)
+
 
         ctk.CTkLabel(self.main_frame, text="Cadastrar Novo Item", font=("Arial", 20)).pack(pady=20)
 
@@ -59,7 +78,7 @@ class App(ctk.CTk):
         preco_entry.pack(pady=5)
         
         categoria_menu = ctk.CTkOptionMenu(self.main_frame, values=["bebidas", "prato", "sobremesa"])
-        categoria_menu.set("bebida") #Valor padrão
+        categoria_menu.set("bebidas") #Valor padrão
         categoria_menu.pack(pady=5)
 
         tamanho_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Tamanho (opcional)")
@@ -78,7 +97,7 @@ class App(ctk.CTk):
             tamanho = tamanho_entry.get()
             descricao = descricao_entry.get()
 
-            if not nome or not preco or not categoria:
+            if not nome.strip() or not preco.strip() or not categoria.strip():
                 resultado_label.configure(text="Nome, preço e categorias são obrigatórios!", text_color="red")
                 return
 
@@ -87,8 +106,10 @@ class App(ctk.CTk):
             except ValueError:  
                 resultado_label.configure(text="Preço inválido!", text_color="red")
                 return
-            from db import inserir_item
-            inserir_item(nome, preco, categoria,tamanho if tamanho else None, descricao if descricao else None)
+            
+            restaurante_id = int(restaurante_menu.get().split(' - ')[0])
+
+            inserir_item(nome, preco, categoria,tamanho if tamanho else None, descricao if descricao else None, restaurante_id)
 
             resultado_label.configure(text="Item cadastrado com sucesso!", text_color="green")
 
@@ -104,28 +125,62 @@ class App(ctk.CTk):
     def mostrar_avaliacoes(self):
         self._atualizar_conteudo("Página de avaliações")
 
-    def _atualizar_conteudo(self, texto):
+    def limpar_conteudo(self):
         for widget in self.main_frame.winfo_children():
             widget.destroy()
+
+    def _atualizar_conteudo(self, texto):
+        self.limpar_conteudo()
         ctk.CTkLabel(self.main_frame, text=texto, font=("Arial", 20)).pack(pady=50)
 
     def _atualizar_conteudo_cardapio(self):
-        from db import buscar_cardapio
+        self.limpar_conteudo()
 
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        restaurantes_ativos = buscar_restaurantes_ativos()
 
-        ctk.CTkLabel(self.main_frame, text="Cardápio do Restaurante Praça", font=("Arial", 22)).pack(pady=20)
+        if not restaurantes_ativos:
+            ctk.CTkLabel(self.main_frame, text="Nenhum restaurante ativo encontrado.", text_color="red").pack(pady=20)
+            return
+
+        ctk.CTkLabel(self.main_frame, text="Selecione o Restaurante:", font=("Arial", 16)).pack(pady=10)
+
+        restaurante_nomes = [f"{id} - {nome}" for id, nome in restaurantes_ativos]
         
-        # Simulação de cardápio
-        cardapio = buscar_cardapio()
+        def atualizar_cardapio_por_selecao(opcao_selecionada):
+            restaurante_id = int(opcao_selecionada.split(" - ")[0])
+            self._mostrar_cardapio_de_restaurante(restaurante_id)
+
+        restaurante_menu = ctk.CTkOptionMenu(
+            self.main_frame,
+            values=restaurante_nomes,
+            command=atualizar_cardapio_por_selecao
+        )
+
+        restaurante_menu.set(restaurante_nomes[0])
+        restaurante_menu.pack(pady=5)
+
+        # Criar frame separado para o cardápio
+        self.cardapio_frame = ctk.CTkFrame(self.main_frame)
+        self.cardapio_frame.pack(fill="both", expand=True, pady=10)
+
+        # Mostrar o cardápio do primeiro restaurante por padrão
+        restaurante_id_padrao = int(restaurante_nomes[0].split(" - ")[0])
+        self._mostrar_cardapio_de_restaurante(restaurante_id_padrao)
+        
+    def _mostrar_cardapio_de_restaurante(self, restaurante_id):
+        for widget in self.cardapio_frame.winfo_children():
+            widget.destroy()
+        
+        cardapio = buscar_cardapio_por_restaurante(restaurante_id)
+
+        ctk.CTkLabel(self.cardapio_frame, text=f"Cardápio do Restaurante ID {restaurante_id}", font=("Arial", 20)).pack(pady=20)
 
         for item in cardapio:
-            frame_item = ctk.CTkFrame(self.main_frame)
+            frame_item = ctk.CTkFrame(self.cardapio_frame)
             frame_item.pack(pady=10, fill="x", padx=40)
 
             nome = item["nome"]
-            preco = f"R${item["preco"]:.2f}"
+            preco = f"R${item['preco']:.2f}"
             categoria = item.get("categoria", "não informado")
 
             texto = f"{nome} | Preço: {preco} | Categoria: {categoria}"
@@ -137,10 +192,9 @@ class App(ctk.CTk):
             label = ctk.CTkLabel(frame_item, text=texto, anchor="w")
             label.pack(side="left", padx=10, pady=5, fill="x", expand=True)
 
-            def deletar(nome_item=nome):
-                from db import deletar_item
-                deletar_item(nome_item)
-                self._atualizar_conteudo_cardapio()
+            def deletar(item_id=item['id']):
+                deletar_item(item_id)
+                self._mostrar_cardapio_de_restaurante(restaurante_id)
 
             btn_del = ctk.CTkButton(frame_item, text="Excluir", width=80, command=deletar)
             btn_del.pack(side="right", padx=10)
@@ -152,8 +206,8 @@ class App(ctk.CTk):
             btn_editar.pack(side="right", padx=10)
 
     def _mostrar_edicao(self, item):
-        for widget in self.main_frame.winfo_children():
-            widget.destroy()
+        self.limpar_conteudo()
+
         ctk.CTkLabel(self.main_frame, text=f"Editando: {item['nome']}", font=("Arial", 20)).pack(pady=20)
 
         nome_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Nome")
@@ -169,12 +223,12 @@ class App(ctk.CTk):
         categoria_menu.pack(pady=5)
 
         tamanho_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Tamanho")
-        if item['tamanho']:
+        if item.get('tamanho'):
             tamanho_entry.insert(0, item['tamanho'])
         tamanho_entry.pack(pady=5)
 
         descricao_entry = ctk.CTkEntry(self.main_frame, placeholder_text="Descrição")
-        if item['descricao']:
+        if item.get('descricao'):
             descricao_entry.insert(0, item['descricao'])
         descricao_entry.pack(pady=5)
 
@@ -182,7 +236,6 @@ class App(ctk.CTk):
         resultado_label.pack(pady=5)
 
         def salvar_edicao():
-            from db import editar_item
             try:
                 preco = float(preco_entry.get())
             except ValueError:
