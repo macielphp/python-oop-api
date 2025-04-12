@@ -1,5 +1,5 @@
 # 🍽️ Sistema de Restaurante com Interface Visual (CustomTkinter + SQLite)
-
+<img src="./public/banner.png" alt="project's banner">
 Este é um sistema completo de gerenciamento de restaurantes com interface gráfica desenvolvida em Python usando [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) e banco de dados SQLite.
 
 ## 🧩 Funcionalidades
